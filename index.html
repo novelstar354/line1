@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LIFE</title>
+<link rel="icon" href="https://imgs.search.brave4u7jddbv7cyviptqjc7jusxh72uik7zt6adtckl5f4nwy2v72qd.onion/LIicBh_FY7aFh7PU_ViBqDWM98ssyTdaJQCN3VK1Iq8/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9zYXRv/LWljb25zLmNvbS93/cC93cC1jb250ZW50/L3VwbG9hZHMvMjAy/MS8wNi8lRTMlODMl/QTElRTMlODMlODMl/RTMlODIlQkIlRTMl/ODMlQkMlRTMlODIl/QjglRTMlODElQUUl/RTMlODIlQTIlRTMl/ODIlQTQlRTMlODIl/QjMlRTMlODMlQjMu/cG5n" sizes="16×16" type="image/png" /> 
+<style>
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:#e5e5e5;
+}
+#lockScreen{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+  background:#06c755;
+  color:white;
+}
+#lockScreen input{
+  margin-top:15px;
+  padding:10px;
+  border-radius:20px;
+  border:none;
+  width:200px;
+  text-align:center;
+}
+#lockScreen button{
+  margin-top:10px;
+  padding:8px 20px;
+  border:none;
+  border-radius:20px;
+  background:white;
+  color:#06c755;
+  font-weight:bold;
+  cursor:pointer;
+}
+#error{
+  margin-top:10px;
+  font-size:12px;
+  color:#ffdddd;
+}
+#app{
+  display:none;
+  flex-direction:column;
+  height:100vh;
+}
+header{
+  background:#06c755;
+  color:white;
+  padding:14px;
+  text-align:center;
+  font-weight:600;
+  position:relative;
+}
+#logout{
+  position:absolute;
+  right:15px;
+  top:14px;
+  font-size:12px;
+  cursor:pointer;
+}
+#chat{
+  flex:1;
+  overflow-y:auto;
+  padding:15px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  background:#e5e5e5;
+}
+.message{
+  max-width:70%;
+  padding:10px 14px;
+  border-radius:18px;
+  font-size:14px;
+  position:relative;
+}
+.me{
+  align-self:flex-end;
+  background:#06c755;
+  color:white;
+  border-radius:18px 18px 4px 18px;
+}
+.other{
+  align-self:flex-start;
+  background:white;
+  border-radius:18px 18px 18px 4px;
+}
+.meta{
+  font-size:10px;
+  opacity:.6;
+  text-align:right;
+  margin-top:4px;
+}
+form{
+  display:flex;
+  padding:8px;
+  background:white;
+  border-top:1px solid #ddd;
+}
+input[type=text]{
+  flex:1;
+  border-radius:20px;
+  border:1px solid #ccc;
+  padding:10px 14px;
+  outline:none;
+}
+form button{
+  margin-left:8px;
+  border:none;
+  background:#06c755;
+  color:white;
+  border-radius:20px;
+  padding:8px 16px;
+  cursor:pointer;
+}
+.other{
+  position:relative;
+  box-shadow:0 1px 2px rgba(0,0,0,0.08);
+  word-break:break-word;
+}
+.other::after{
+  content:"";
+  position:absolute;
+  left:-6px;
+  bottom:0;
+  width:0;
+  height:0;
+  border-right:8px solid #ffffff;
+  border-top:8px solid transparent;
+}
+body.dark .other{
+  background:#2a2a2a;
+  color:#fff;
+  box-shadow:none;
+}
+body.dark .other::after{
+  border-right:8px solid #2a2a2a;
+}
+.other + .other::after{
+  display:none;
+}
+.other-wrapper{
+  display:flex;
+  align-items:flex-end;
+  gap:8px;
+}
+.buttonGroup{
+  margin-top:4px;
+  text-align:right;
+}
+.buttonGroup button{
+  font-size:10px;
+  margin-left:4px;
+  padding:2px 4px;
+  border:none;
+  border-radius:4px;
+  cursor:pointer;
+}
+.buttonGroup button.cancel{ background:#ffa; color:#333; }
+.buttonGroup button.delete{ background:#f66; color:#fff; }
+</style>
+</head>
+<body>
+
+<div id="lockScreen">
+  <h2>パスワードを入力</h2>
+  <input type="password" id="passwordInput" placeholder="Password">
+  <button onclick="login()">解除</button>
+  <div id="error"></div>
+</div>
+
+<div id="app">
+  <header>
+    トーク
+    <span id="logout" onclick="logout()">ログアウト</span>
+  </header>
+  <div id="chat"></div>
+  <form id="chatForm" action="" method="post">
+    <input type="text" id="name" name="name" placeholder="名前を入力" style="margin:0px 4px;">
+    <input type="text" id="text" name="message" placeholder="メッセージを入力">
+    <button type="submit">送信</button>
+  </form>message
+</div>
+
+<script>
+const PASSWORD="orange";
+const lockScreen=document.getElementById("lockScreen");
+const app=document.getElementById("app");
+const error=document.getElementById("error");
+const passwordInput=document.getElementById("passwordInput");
+const chat=document.getElementById("chat");
+const form=document.getElementById("chatForm");
+const text=document.getElementById("text");
+
+let messages=JSON.parse(localStorage.getItem("line_messages")||"[]");
+
+function save(){ localStorage.setItem("line_messages",JSON.stringify(messages)); }
+
+function login(){
+  if(passwordInput.value===PASSWORD){
+    localStorage.setItem("loggedIn","true");
+    lockScreen.style.display="none";
+    app.style.display="flex";
+    render();
+  } else {
+    error.textContent="パスワードが違います";
+  }
+}
+
+function logout(){
+  localStorage.removeItem("loggedIn");
+  location.reload();
+}
+
+if(localStorage.getItem("loggedIn")==="true"){
+  lockScreen.style.display="none";
+  app.style.display="flex";
+  render();
+}
+
+function getTime(){
+  const d=new Date();
+  return d.getHours().toString().padStart(2,"0")+":"+d.getMinutes().toString().padStart(2,"0");
+}
+
+function render(){
+  chat.innerHTML="";
+  messages.forEach((m,i)=>{
+    const div=document.createElement("div");
+    div.className="message "+m.type;
+    div.innerHTML=`
+      ${m.deleted?"メッセージを取り消しました":m.text}
+      <div class="meta">${m.time}</div>
+    `;
+
+    // 自分のメッセージに取り消し/削除ボタン追加
+    if(m.type==="me" && !m.deleted){
+      const btnGroup=document.createElement("div");
+      btnGroup.className="buttonGroup";
+
+      const cancelBtn=document.createElement("button");
+      cancelBtn.textContent="取り消し";
+      cancelBtn.className="cancel";
+      cancelBtn.onclick=()=>{ m.deleted=true; save(); render(); };
+
+      const deleteBtn=document.createElement("button");
+      deleteBtn.textContent="削除";
+      deleteBtn.className="delete";
+      deleteBtn.onclick=()=>{ messages.splice(i,1); save(); render(); };
+
+      btnGroup.appendChild(cancelBtn);
+      btnGroup.appendChild(deleteBtn);
+      div.appendChild(btnGroup);
+    }
+
+    chat.appendChild(div);
+  });
+  chat.scrollTop=chat.scrollHeight;
+}
+
+form.addEventListener("submit",e=>{
+  e.preventDefault();
+  if(text.value.trim()==="") return;
+
+  messages.push({
+    text:text.value,
+    type:"me",
+    time:getTime(),
+    deleted:false
+  });
+
+  text.value="";
+  save();
+  render();
+});
+</script>
+
+</body>
+</html>
